@@ -1,0 +1,7 @@
+result/
+dist/
+.default/
+.nix-*
+cabal.project.local
+dist-newstyle/
+.stack-work/

@@ -1,0 +1,14 @@
+cabal-version:       >=1.24
+name:                lambda-test
+version:             0.1.0.0
+build-type:          Simple
+
+executable lambda-test
+  main-is:           Main.hs
+  hs-source-dirs:    app
+  default-language:  Haskell2010
+  ghc-options:       -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+        base >=4.14 && <5
+      , aeson
+      , bytestring
