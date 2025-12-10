@@ -1,9 +1,9 @@
 cabal-version:       >=1.24
-name:                lambda-test
+name:                ghc912-static-nix
 version:             0.1.0.0
 build-type:          Simple
 
-executable lambda-test
+executable ghc912-static-nix
   main-is:           Main.hs
   hs-source-dirs:    app
   default-language:  Haskell2010

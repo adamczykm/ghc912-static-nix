@@ -50,8 +50,8 @@
       # =========================================================================
       # Main Haskell Package
       # =========================================================================
-      lambdaTest = hsLib.overrideCabal
-        (haskellPackages.callCabal2nix "lambda-test" ./. { })
+      staticBinary = hsLib.overrideCabal
+        (haskellPackages.callCabal2nix "ghc912-static-nix" ./. { })
         (old: {
           # Disable shared libraries to force static linking
           enableSharedExecutables = false;
@@ -89,8 +89,8 @@
       # Package Outputs
       # =========================================================================
       packages.${system} = {
-        lambda-test = lambdaTest;
-        default = lambdaTest;
+        ghc912-static-nix = staticBinary;
+        default = staticBinary;
       };
 
       # =========================================================================

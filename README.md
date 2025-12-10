@@ -19,22 +19,22 @@ Starting with GHC 9.6, the compiler includes support for DWARF debugging informa
 ./scripts/build.sh
 ```
 
-The binary will be available at `result/bin/lambda-test`.
+The binary will be available at `result/bin/ghc912-static-nix`.
 
 ### Verify it's statically linked
 
 ```bash
-file result/bin/lambda-test
+file result/bin/ghc912-static-nix
 # Output: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, stripped
 
-ldd result/bin/lambda-test
+ldd result/bin/ghc912-static-nix
 # Output: not a dynamic executable
 ```
 
 ### Test the binary
 
 ```bash
-echo '{"test": "hello"}' | result/bin/lambda-test
+echo '{"test": "hello"}' | result/bin/ghc912-static-nix
 # Output: {"message":"Hello from statically linked Haskell!","input":"{\"test\": \"hello\"}\n"}
 ```
 
@@ -44,14 +44,14 @@ echo '{"test": "hello"}' | result/bin/lambda-test
 ./scripts/package-lambda.sh
 ```
 
-This creates `dist/lambda-test.zip` ready to deploy to AWS Lambda with runtime `provided.al2`.
+This creates `dist/ghc912-static-nix.zip` ready to deploy to AWS Lambda with runtime `provided.al2`.
 
 ## Project Structure
 
 ```
 .
 ├── flake.nix                    # Nix flake with GHC 9.12.2 and static linking configuration
-├── lambda-test.cabal           # Minimal Cabal project
+├── ghc912-static-nix.cabal     # Minimal Cabal project
 ├── app/
 │   └── Main.hs                 # Simple JSON echo program
 ├── scripts/
@@ -104,7 +104,7 @@ The core of the static linking setup in `flake.nix`:
 
 ```nix
 lambdaTest = hsLib.overrideCabal
-  (haskellPackages.callCabal2nix "lambda-test" ./. { })
+  (haskellPackages.callCabal2nix "ghc912-static-nix" ./. { })
   (old: {
     enableSharedExecutables = false;
     enableSharedLibraries   = false;
@@ -129,14 +129,14 @@ Inside the shell you can use standard Cabal commands:
 
 ```bash
 cabal build
-cabal run lambda-test
+cabal run ghc912-static-nix
 ```
 
 ## Customization
 
 To adapt this for your project:
 
-1. **Rename the project**: Update `name` in `lambda-test.cabal` and adjust `flake.nix` accordingly
+1. **Rename the project**: Update `name` in `ghc912-static-nix.cabal` and adjust `flake.nix` accordingly
 2. **Add dependencies**: Add Haskell packages to `build-depends` in the `.cabal` file
 3. **Modify the application**: Edit `app/Main.hs` with your logic
 4. **Rebuild**: Run `./scripts/build.sh`
@@ -171,7 +171,7 @@ This means a Nix attribute doesn't exist. Common causes:
 
 ### Binary isn't actually static
 
-Verify with `ldd result/bin/lambda-test`. If it shows libraries:
+Verify with `ldd result/bin/ghc912-static-nix`. If it shows libraries:
 - Check that `--ghc-option=-optl=-static` is present
 - Ensure `enableSharedExecutables = false`
 - Verify you're using `pkgsMusl` not regular `pkgs`
