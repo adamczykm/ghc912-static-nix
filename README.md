@@ -130,21 +130,32 @@ Key detail: for cross-compiled elfutils, the `.out` output must be used explicit
 
 ### Key Configuration
 
-The core of the static linking setup in `flake.nix`:
+The core of the static linking setup in `flake.nix` uses a shared helper parameterized over target-specific packages:
 
 ```nix
-lambdaTest = hsLib.overrideCabal
-  (haskellPackages.callCabal2nix "ghc912-static-nix" ./. { })
-  (old: {
-    enableSharedExecutables = false;
-    enableSharedLibraries   = false;
-    configureFlags = (old.configureFlags or [ ]) ++ [
-      "--ghc-option=-optl=-static"
-      "--ghc-option=-optl=-pthread"
-      # ... library directories ...
-      # ... explicit linker flags ...
-    ];
-  });
+mkStaticBinary = { hsPkgs, gmp, libffi, numactl, zlib, elfutils, bzip2, xz, zstd }:
+  hsLib.overrideCabal
+    (hsPkgs.callCabal2nix "ghc912-static-nix" ./. { })
+    (old: {
+      enableSharedExecutables = false;
+      enableSharedLibraries   = false;
+      configureFlags = (old.configureFlags or [ ]) ++ [
+        "--ghc-option=-optl=-static"
+        "--ghc-option=-optl=-pthread"
+        # ... library directories ...
+        # ... explicit linker flags ...
+      ];
+    });
+```
+
+This is then invoked for each target with the appropriate package sets:
+
+```nix
+# Native x86_64
+staticBinary = mkStaticBinary { hsPkgs = haskellPackages; ... };
+
+# Cross-compiled ARM64
+staticBinaryAarch64 = mkStaticBinary { hsPkgs = haskellPackagesCrossAarch64; ... };
 ```
 
 ## Development
