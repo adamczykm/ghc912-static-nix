@@ -1,6 +1,6 @@
 # Static Haskell Binary with GHC 9.12.2 and Nix
 
-A minimal proof-of-concept demonstrating how to build fully statically linked Haskell executables using GHC 9.12.2 and Nix flakes. The resulting binary has no runtime dependencies and is ready for deployment to environments like AWS Lambda.
+A minimal proof-of-concept demonstrating how to build fully statically linked Haskell executables using GHC 9.12.2 and Nix flakes. Supports both **x86_64** and **aarch64** (ARM64) targets, including cross-compilation for Raspberry Pi. The resulting binaries have no runtime dependencies and are ready for deployment to environments like AWS Lambda or bare-metal ARM devices.
 
 ## Why This Matters
 
@@ -11,12 +11,25 @@ Starting with GHC 9.6, the compiler includes support for DWARF debugging informa
 - **elfutils and compression libraries** (bzip2, xz, zstd) required by GHC 9.6+ for libdw
 - **Explicit linker flags** to resolve transitive dependencies
 
+## Supported Targets
+
+| Target | Build command | Use case |
+|--------|-------------|----------|
+| x86_64 (native) | `nix build` | Servers, AWS Lambda, x86 desktops |
+| aarch64 (cross-compiled) | `nix build .#aarch64` | Raspberry Pi 5, ARM servers |
+
+Both targets produce fully static binaries with zero runtime dependencies. The aarch64 binary is cross-compiled from x86_64 — no ARM hardware or emulation needed to build.
+
 ## Quick Start
 
 ### Build the static binary
 
 ```bash
-./scripts/build.sh
+# Native x86_64
+nix build
+
+# Cross-compile for ARM64 (Raspberry Pi 5, etc.)
+nix build .#aarch64
 ```
 
 The binary will be available at `result/bin/ghc912-static-nix`.
@@ -25,7 +38,8 @@ The binary will be available at `result/bin/ghc912-static-nix`.
 
 ```bash
 file result/bin/ghc912-static-nix
-# Output: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, stripped
+# x86_64: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, stripped
+# aarch64: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, stripped
 
 ldd result/bin/ghc912-static-nix
 # Output: not a dynamic executable
@@ -36,6 +50,16 @@ ldd result/bin/ghc912-static-nix
 ```bash
 echo '{"test": "hello"}' | result/bin/ghc912-static-nix
 # Output: {"message":"Hello from statically linked Haskell!","input":"{\"test\": \"hello\"}\n"}
+```
+
+### Deploy to Raspberry Pi
+
+Copy the aarch64 binary directly to a Raspberry Pi 5 — no Haskell toolchain or libraries needed on the device:
+
+```bash
+nix build .#aarch64
+scp result/bin/ghc912-static-nix pi@raspberrypi:~/
+ssh pi@raspberrypi ./ghc912-static-nix
 ```
 
 ### Package for AWS Lambda
@@ -97,6 +121,12 @@ Our `flake.nix` handles this by:
    "--ghc-option=-optl=-llzma"
    "--ghc-option=-optl=-lzstd"
    ```
+
+### Cross-compilation for ARM64
+
+The ARM64 build uses `pkgsCross.aarch64-multiplatform-musl` to cross-compile from x86_64. A shared `mkStaticBinary` helper is parameterized over the target-specific packages, keeping the configuration DRY.
+
+Key detail: for cross-compiled elfutils, the `.out` output must be used explicitly — the default output resolves to `-bin` which only contains binaries, not the static libraries (`libelf.a`, `libdw.a`) needed at link time.
 
 ### Key Configuration
 
